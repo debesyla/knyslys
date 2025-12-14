@@ -16,6 +16,16 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     let domainCount = 0;
     let isActive = true;
     let isUserInteracting = false;
+    let isTabVisible = !document.hidden;
+
+    // Track tab visibility - pause scanning when tab is hidden
+    document.addEventListener('visibilitychange', () => {
+        isTabVisible = !document.hidden;
+        if (!isTabVisible) {
+            // Flush any pending domains before going inactive
+            flushDomains();
+        }
+    });
 
     // Track user interaction - pause scanning during heavy user activity
     document.addEventListener('mousedown', () => { isUserInteracting = true; }, true);
@@ -36,6 +46,8 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
 
     function extract(text) {
         if (!text || typeof text !== 'string' || text.length > 50000) return [];
+        // Pre-filter: skip expensive regex if .lt doesn't exist
+        if (!text.includes('.lt')) return [];
         const found = text.match(domainRegex);
         if (!found) return [];
         return found.map(normalize);
@@ -43,6 +55,8 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
 
     function extractEmails(html) {
         if (!html || typeof html !== 'string' || html.length > 50000) return [];
+        // Pre-filter: skip expensive regex if .lt doesn't exist
+        if (!html.includes('.lt')) return [];
         const emails = html.match(emailRegex);
         if (!emails) return [];
         return emails.map(e => normalize(e.split("@")[1]));
@@ -87,7 +101,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     }
 
     function debouncedFlush() {
-        if (!isActive || isUserInteracting) return; // Skip during user interaction
+        if (!isActive || isUserInteracting || !isTabVisible) return; // Skip during user interaction or hidden tab
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(flushDomains, 1500);
     }
@@ -114,7 +128,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
 
     // Use less aggressive observer
     const obs = new MutationObserver(mutations => {
-        if (!isActive) return;
+        if (!isActive || !isTabVisible) return; // Skip if tab is hidden
 
         let nodesToScan = 0;
         for (const m of mutations) {
