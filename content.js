@@ -50,13 +50,30 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         }
     }
 
+    function isValidDomain(domain) {
+        if (!domain) return false;
+        // Split into labels (parts between dots)
+        const labels = domain.split('.');
+        for (const label of labels) {
+            // Each label must be 2-63 characters
+            if (label.length < 2 || label.length > 63) return false;
+            // Can't have two hyphens in a row
+            if (label.includes('--')) return false;
+            // Can't end with hyphen
+            if (label.endsWith('-')) return false;
+            // Can't start with hyphen
+            if (label.startsWith('-')) return false;
+        }
+        return true;
+    }
+
     function extract(text) {
         if (!text || typeof text !== 'string' || text.length > 50000) return [];
         // Pre-filter: skip expensive regex if .lt doesn't exist
         if (!text.includes('.lt')) return [];
         const found = text.match(domainRegex);
         if (!found) return [];
-        return found.map(normalize);
+        return found.map(normalize).filter(isValidDomain);
     }
 
     function extractEmails(html) {
@@ -65,7 +82,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         if (!html.includes('.lt')) return [];
         const emails = html.match(emailRegex);
         if (!emails) return [];
-        return emails.map(e => normalize(e.split("@")[1]));
+        return emails.map(e => normalize(e.split("@")[1])).filter(isValidDomain);
     }
 
     function scan(node) {
