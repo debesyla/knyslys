@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Knyslys: kolekcionuok .lt domenus",
+  "version": "1.0",
+  "description": "Ištraukia .lt domenas iš aplankytų puslapių. Duomenys saugomi naršyklės atmintyje ir niekur nesiunčiami, lieka tik tau.",
+  "permissions": ["storage", "tabs", "downloads"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Knyslys", "default_icon": "icons/hog.png" },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
