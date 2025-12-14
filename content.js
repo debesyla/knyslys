@@ -99,7 +99,15 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         } else if (node.nodeType === 1) {
             // Element node - only scan direct href and limited text
             if (node.href) {
-                domains = domains.concat(extract(node.href));
+                try {
+                    const url = new URL(node.href);
+                    // Only extract from hostname and pathname, not the full href which may contain encoded chars
+                    domains = domains.concat(extract(url.hostname));
+                    domains = domains.concat(extract(url.pathname));
+                } catch {
+                    // Fallback if URL parsing fails
+                    domains = domains.concat(extract(node.href));
+                }
             }
             if (node.textContent && node.children.length < MAX_NODES_PER_SCAN) {
                 domains = domains.concat(extract(node.textContent));
