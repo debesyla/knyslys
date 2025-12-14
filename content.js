@@ -6,6 +6,12 @@ const blacklist = [
 ];
 
 if (!blacklist.some(b => location.hostname.includes(b))) {
+    // Save current page's domain if it's a .lt domain
+    if (location.hostname.endsWith('.lt')) {
+        const currentDomain = location.hostname.toLowerCase().replace(/^www\./, '');
+        chrome.runtime.sendMessage({ type: "addDomains", domains: [currentDomain] });
+    }
+
     const domainRegex = /([a-zA-Z0-9_-]+\.)+lt\b/gi;
     const emailRegex = /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.lt)/gi;
     let debounceTimer = null;
