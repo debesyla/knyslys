@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chrome.storage.local.get(["domains_map"], (res) => {
         const map = res.domains_map || {};
-        countEl.textContent = "Rasta tiek domenų: " + Object.keys(map).length;
+        countEl.textContent = "Rasta domenų: " + Object.keys(map).length;
     });
 
     exportBtn.onclick = () => {
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 exportBtn.textContent = "Išsaugota!";
                 setTimeout(() => {
                     exportBtn.textContent = originalLabel;
-                }, 3000);
+                }, 2000);
             });
         });
     };
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     confirmYes.onclick = () => {
         chrome.storage.local.set({ domains_map: {} }, () => {
-            countEl.textContent = "Rasta tiek domenų: 0";
+            countEl.textContent = "Rasta domenų: 0";
             chrome.action.setBadgeText({ text: "0" });
             hideConfirm();
         });

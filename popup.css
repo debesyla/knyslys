@@ -1,0 +1,64 @@
+/* Theme variables */
+:root {
+	--bg: #ffffff;
+	--fg: #111111;
+	--muted-fg: #555555;
+	--border: #dddddd;
+	--btn-bg: #f3f3f3;
+	--btn-fg: #111111;
+	--btn-danger-bg: #efefef;
+	--btn-danger-fg: #aa0000;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+	--bg: #0f0f12;
+	--fg: #e9eaee;
+	--muted-fg: #9aa0a6;
+	--border: #2a2d33;
+	--btn-bg: #1a1d22;
+	--btn-fg: #e9eaee;
+	--btn-danger-bg: #1a1d22;
+	--btn-danger-fg: #ff6b6b;
+}
+
+/* Respect system preference by default */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #0f0f12;
+		--fg: #e9eaee;
+		--muted-fg: #9aa0a6;
+		--border: #2a2d33;
+		--btn-bg: #1a1d22;
+		--btn-fg: #e9eaee;
+		--btn-danger-bg: #1a1d22;
+		--btn-danger-fg: #ff6b6b;
+	}
+}
+
+body { font-family: sans-serif; width: 250px; padding: 10px; background: var(--bg); color: var(--fg); }
+.popup { display: flex; flex-direction: column; gap: 8px; }
+button { width: 100%; padding: 6px; background: var(--btn-bg); color: var(--btn-fg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+.btn-primary { background: #2F3DA6; color: #ffffff; border-color: #2F3DA6; }
+.btn-primary:hover { background: #293694; border-color: #293694; }
+.btn-primary:active { background: #223082; border-color: #223082; }
+.btn-primary:focus { outline: none; box-shadow: 0 0 0 2px rgba(47, 61, 166, 0.35); }
+
+/* Danger button */
+.btn-danger { background: var(--btn-danger-bg); color: var(--btn-danger-fg); border-color: var(--border); }
+.btn-danger:hover { filter: brightness(0.97); opacity: 1; }
+.btn-danger:active { filter: brightness(0.94); }
+.btn-danger:focus { outline: none; box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.35); }
+.count { font-weight: bold; margin-bottom: 2px; }
+.hidden { display: none; }
+.confirm-space { min-height: 0; }
+.confirm { padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+.confirm-text { margin-bottom: 6px; font-size: 14px; color: var(--muted-fg); }
+.confirm button { margin-top: 6px; }
+
+/* Clear button demotion without absolute positioning */
+#clear { width: auto; align-self: flex-end; padding: 4px 6px; font-size: 12px; opacity: 0.75; }
+#clear:hover { opacity: 1; }
+
+/* Clear button container row */
+.clear-row { margin-top: auto; text-align: right; }
