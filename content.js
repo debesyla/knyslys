@@ -129,17 +129,32 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         debounceTimer = setTimeout(flushDomains, 1500);
     }
 
-    // Initial scan - but be more selective and use requestIdleCallback for better timing
+    // Initial scan - links plus a small pass over common text containers
     function performInitialScan() {
-        const initialNodes = document.querySelectorAll("a[href]");
-        if (initialNodes.length > 0) {
-            // Limit initial scan to first 300 links
-            const limit = Math.min(initialNodes.length, 300);
-            for (let i = 0; i < limit; i++) {
-                scan(initialNodes[i]);
-            }
-            flushDomains();
+        const initialLinks = document.querySelectorAll("a[href]");
+        const linkLimit = Math.min(initialLinks.length, 300);
+        for (let i = 0; i < linkLimit; i++) {
+            scan(initialLinks[i]);
         }
+
+        const textSelectors = ['td', 'p', 'div', 'span', 'li'];
+        let scannedText = 0;
+        const TEXT_SCAN_LIMIT = 400;
+        for (const sel of textSelectors) {
+            if (scannedText >= TEXT_SCAN_LIMIT) break;
+            const nodes = document.querySelectorAll(sel);
+            for (let i = 0; i < nodes.length && scannedText < TEXT_SCAN_LIMIT; i++) {
+                const n = nodes[i];
+                if (n.children && n.children.length >= MAX_NODES_PER_SCAN) continue;
+                const txt = n.textContent || '';
+                if (typeof txt === 'string' && txt.includes('.lt')) {
+                    scan(n);
+                    scannedText++;
+                }
+            }
+        }
+
+        flushDomains();
     }
 
     // Use requestIdleCallback for initial scan if available
@@ -157,8 +172,11 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         for (const m of mutations) {
             if (m.type === 'childList') {
                 for (const n of m.addedNodes) {
-                    if (nodesToScan < 20) { // Further reduced from 30
-                        if (n.nodeType === 1 && !processedNodes.has(n)) {
+                    if (nodesToScan >= 40) break; // modest cap per mutation batch
+                    if (n.nodeType === 1 && !processedNodes.has(n)) {
+                        const txt = n.textContent || '';
+                        // Scan links or small text nodes that look relevant
+                        if (n.href || (n.children && n.children.length < MAX_NODES_PER_SCAN && typeof txt === 'string' && txt.includes('.lt'))) {
                             scan(n);
                             nodesToScan++;
                         }
@@ -173,7 +191,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     // Use limited mutation types
     obs.observe(document.body, {
         childList: true,
-        subtree: false,
+        subtree: true, // observe deeper changes so newly loaded tables/text are seen
         characterData: false,
         attributes: false
     });
