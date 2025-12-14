@@ -1,3 +1,5 @@
+let updateBadgeTimer = null;
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "addDomains") {
         chrome.storage.local.get(["domains_map"], (res) => {
@@ -5,23 +7,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             let changed = false;
 
             for (const d of msg.domains) {
-                if (!map[d]) {
+                if (d && !map[d]) {
                     map[d] = true;
                     changed = true;
                 }
             }
 
             if (changed) {
-                chrome.storage.local.set({ domains_map: map }, () => {
+                chrome.storage.local.set({ domains_map: map });
+                // Debounce badge updates to avoid excessive work
+                clearTimeout(updateBadgeTimer);
+                updateBadgeTimer = setTimeout(() => {
                     const count = Object.keys(map).length;
                     const badge = count > 999 ? Math.floor(count/1000) + "K" : String(count);
                     chrome.action.setBadgeText({ text: badge });
-                });
+                }, 500);
             }
         });
     }
 });
 
+// Initialize badge on startup
 chrome.storage.local.get(["domains_map"], res => {
     const count = Object.keys(res.domains_map || {}).length;
     const badge = count > 999 ? Math.floor(count/1000) + "K" : String(count);
