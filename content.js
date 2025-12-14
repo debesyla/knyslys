@@ -10,7 +10,18 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     const emailRegex = /[A-Za-z0-9._%+-]+@([A-Za-z0-9.-]+\.lt)/gi;
     let debounceTimer = null;
     let pendingDomains = new Set();
+    let processedNodes = new WeakSet(); // Track already scanned nodes
     const MAX_NODES_PER_SCAN = 50;
+    const MAX_PENDING = 2000; // Stop if we've found tons of domains
+    let domainCount = 0;
+    let isActive = true;
+    let isUserInteracting = false;
+
+    // Track user interaction - pause scanning during heavy user activity
+    document.addEventListener('mousedown', () => { isUserInteracting = true; }, true);
+    document.addEventListener('keydown', () => { isUserInteracting = true; }, true);
+    document.addEventListener('mouseup', () => { isUserInteracting = false; }, true);
+    document.addEventListener('keyup', () => { isUserInteracting = false; }, true);
 
     function normalize(domain) {
         domain = domain.toLowerCase();
@@ -24,22 +35,24 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     }
 
     function extract(text) {
-        if (!text || typeof text !== 'string') return [];
+        if (!text || typeof text !== 'string' || text.length > 50000) return [];
         const found = text.match(domainRegex);
         if (!found) return [];
         return found.map(normalize);
     }
 
     function extractEmails(html) {
-        if (!html || typeof html !== 'string') return [];
+        if (!html || typeof html !== 'string' || html.length > 50000) return [];
         const emails = html.match(emailRegex);
         if (!emails) return [];
         return emails.map(e => normalize(e.split("@")[1]));
     }
 
     function scan(node) {
-        if (!node || !node.nodeType) return;
+        if (!node || !node.nodeType || processedNodes.has(node)) return;
+        if (pendingDomains.size >= MAX_PENDING) return; // Stop if we found many domains
 
+        processedNodes.add(node);
         let domains = [];
 
         // Only process text nodes and elements
@@ -67,35 +80,48 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     function flushDomains() {
         if (pendingDomains.size > 0) {
             const domains = Array.from(pendingDomains);
+            domainCount += domains.length;
             pendingDomains.clear();
             chrome.runtime.sendMessage({ type: "addDomains", domains });
         }
     }
 
     function debouncedFlush() {
+        if (!isActive || isUserInteracting) return; // Skip during user interaction
         clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(flushDomains, 1000);
+        debounceTimer = setTimeout(flushDomains, 1500);
     }
 
-    // Initial scan - but be more selective
-    const initialNodes = document.querySelectorAll("a[href]");
-    if (initialNodes.length > 0) {
-        // Limit initial scan to first 500 links
-        const limit = Math.min(initialNodes.length, 500);
-        for (let i = 0; i < limit; i++) {
-            scan(initialNodes[i]);
+    // Initial scan - but be more selective and use requestIdleCallback for better timing
+    function performInitialScan() {
+        const initialNodes = document.querySelectorAll("a[href]");
+        if (initialNodes.length > 0) {
+            // Limit initial scan to first 300 links
+            const limit = Math.min(initialNodes.length, 300);
+            for (let i = 0; i < limit; i++) {
+                scan(initialNodes[i]);
+            }
+            flushDomains();
         }
-        flushDomains();
+    }
+
+    // Use requestIdleCallback for initial scan if available
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(performInitialScan, { timeout: 3000 });
+    } else {
+        setTimeout(performInitialScan, 2000);
     }
 
     // Use less aggressive observer
     const obs = new MutationObserver(mutations => {
+        if (!isActive) return;
+
         let nodesToScan = 0;
         for (const m of mutations) {
             if (m.type === 'childList') {
                 for (const n of m.addedNodes) {
-                    if (nodesToScan < 30) { // Limit nodes processed per batch
-                        if (n.nodeType === 1) {
+                    if (nodesToScan < 20) { // Further reduced from 30
+                        if (n.nodeType === 1 && !processedNodes.has(n)) {
                             scan(n);
                             nodesToScan++;
                         }
@@ -115,9 +141,16 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         attributes: false
     });
 
-    // Stop observer if page is getting hammered (safety check)
+    // Disable observer if page has extensive DOM activity
     let mutationCount = 0;
     const safetyInterval = setInterval(() => {
+        if (mutationCount > 500) {
+            obs.disconnect();
+            isActive = false;
+            clearInterval(safetyInterval);
+            clearTimeout(debounceTimer);
+            flushDomains();
+        }
         mutationCount = 0;
     }, 5000);
 
@@ -125,5 +158,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
         obs.disconnect();
         clearInterval(safetyInterval);
         clearTimeout(debounceTimer);
+        flushDomains();
+        isActive = false;
     });
 }
