@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chrome.storage.local.get(["domains_map"], (res) => {
         const map = res.domains_map || {};
-        countEl.textContent = "Saugoma: " + Object.keys(map).length;
+        countEl.textContent = "Rasta tiek domenų: " + Object.keys(map).length;
     });
 
     exportBtn.onclick = () => {
