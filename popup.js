@@ -23,9 +23,18 @@ document.addEventListener("DOMContentLoaded", () => {
             const d = String(now.getDate()).padStart(2, "0");
             const filename = `knyslys_${y}${m}${d}.txt`;
 
-            chrome.downloads.download({
-                url,
-                filename
+            const originalLabel = exportBtn.textContent;
+
+            chrome.downloads.download({ url, filename }, (downloadId) => {
+                if (chrome.runtime.lastError || typeof downloadId !== "number") {
+                    // On failure, keep original label and return
+                    return;
+                }
+
+                exportBtn.textContent = "Išsaugota!";
+                setTimeout(() => {
+                    exportBtn.textContent = originalLabel;
+                }, 3000);
             });
         });
     };
