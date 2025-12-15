@@ -4,7 +4,7 @@ let cachedDomainCount = 0;
 // Load initial count once
 chrome.storage.local.get(["domains_map"], res => {
     cachedDomainCount = Object.keys(res.domains_map || {}).length;
-    const badge = cachedDomainCount > 999 ? Math.floor(cachedDomainCount/1000) + "K" : String(cachedDomainCount);
+    const badge = cachedDomainCount > 999 ? (cachedDomainCount/1000).toFixed(1) + "K" : String(cachedDomainCount);
     chrome.action.setBadgeText({ text: badge });
 });
 
@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     clearTimeout(updateBadgeTimer);
                     updateBadgeTimer = setTimeout(() => {
                         const count = cachedDomainCount;
-                        const badge = count > 999 ? Math.floor(count/1000) + "K" : String(count);
+                        const badge = count > 999 ? (count/1000).toFixed(1) + "K" : String(count);
                         chrome.action.setBadgeText({ text: badge });
                     }, 800);
                 }
