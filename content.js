@@ -1,3 +1,4 @@
+const ext = typeof browser !== 'undefined' ? browser : chrome;
 const blacklist = [
     "facebook.com", "messenger.com", "instagram.com",
     "twitter.com", "x.com", "linkedin.com", "tiktok.com",
@@ -9,7 +10,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
     // Save current page's domain if it's a .lt domain
     if (location.hostname.endsWith('.lt')) {
         const currentDomain = location.hostname.toLowerCase().replace(/^www\./, '');
-        chrome.runtime.sendMessage({ type: "addDomains", domains: [currentDomain] });
+        ext.runtime.sendMessage({ type: "addDomains", domains: [currentDomain] });
     }
 
     const domainRegex = /([a-zA-Z0-9_-]+\.)+lt\b/gi;
@@ -127,7 +128,7 @@ if (!blacklist.some(b => location.hostname.includes(b))) {
             const domains = Array.from(pendingDomains);
             domainCount += domains.length;
             pendingDomains.clear();
-            chrome.runtime.sendMessage({ type: "addDomains", domains });
+                ext.runtime.sendMessage({ type: "addDomains", domains });
         }
     }
 

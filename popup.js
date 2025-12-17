@@ -1,3 +1,4 @@
+const ext = typeof browser !== 'undefined' ? browser : chrome;
 document.addEventListener("DOMContentLoaded", () => {
     const countEl = document.getElementById("count");
     const exportBtn = document.getElementById("export");
@@ -6,13 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmYes = document.getElementById("confirm-yes");
     const confirmCancel = document.getElementById("confirm-cancel");
 
-    chrome.storage.local.get(["domains_map"], (res) => {
+    ext.storage.local.get(["domains_map"], (res) => {
         const map = res.domains_map || {};
         countEl.textContent = "Rasta domenų: " + Object.keys(map).length;
     });
 
     exportBtn.onclick = () => {
-        chrome.storage.local.get(["domains_map"], (res) => {
+        ext.storage.local.get(["domains_map"], (res) => {
             const list = Object.keys(res.domains_map || {}).sort().join("\n");
             const blob = new Blob([list], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
@@ -27,8 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const originalLabel = exportBtn.textContent;
 
-            chrome.downloads.download({ url, filename }, (downloadId) => {
-                if (chrome.runtime.lastError || typeof downloadId !== "number") {
+            ext.downloads.download({ url, filename }, (downloadId) => {
+                if ((ext.runtime && ext.runtime.lastError) || typeof downloadId !== "number") {
                     // On failure, keep original label and return
                     return;
                 }
@@ -62,9 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     confirmYes.onclick = () => {
-        chrome.storage.local.set({ domains_map: {} }, () => {
+        ext.storage.local.set({ domains_map: {} }, () => {
             countEl.textContent = "Rasta domenų: 0";
-            chrome.action.setBadgeText({ text: "0" });
+            ext.action.setBadgeText({ text: "0" });
             hideConfirm();
         });
     };

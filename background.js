@@ -1,16 +1,17 @@
+const ext = typeof browser !== 'undefined' ? browser : chrome;
 let updateBadgeTimer = null;
 let cachedDomainCount = 0;
 
 // Load initial count once
-chrome.storage.local.get(["domains_map"], res => {
+ext.storage.local.get(["domains_map"], res => {
     cachedDomainCount = Object.keys(res.domains_map || {}).length;
     const badge = cachedDomainCount > 999 ? (cachedDomainCount/1000).toFixed(1) + "K" : String(cachedDomainCount);
-    chrome.action.setBadgeText({ text: badge });
+    ext.action.setBadgeText({ text: badge });
 });
 
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "addDomains" && Array.isArray(msg.domains)) {
-        chrome.storage.local.get(["domains_map"], (res) => {
+        ext.storage.local.get(["domains_map"], (res) => {
             let map = res.domains_map || {};
             let changed = false;
             let addedCount = 0;
@@ -25,7 +26,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
             if (changed) {
                 // Batch writes - don't update badge on every message
-                chrome.storage.local.set({ domains_map: map });
+                ext.storage.local.set({ domains_map: map });
                 cachedDomainCount += addedCount;
 
                 // Only update badge if count changed significantly
@@ -36,7 +37,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                     updateBadgeTimer = setTimeout(() => {
                         const count = cachedDomainCount;
                         const badge = count > 999 ? (count/1000).toFixed(1) + "K" : String(count);
-                        chrome.action.setBadgeText({ text: badge });
+                        ext.action.setBadgeText({ text: badge });
                     }, 800);
                 }
             }
