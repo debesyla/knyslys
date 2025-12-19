@@ -30,9 +30,7 @@ ext.runtime.onMessage.addListener((msg, sender, sendResponse) => {
                 cachedDomainCount += addedCount;
 
                 // Only update badge if count changed significantly
-                // @TEMPORARY: for testing purposes, reduce thresholds
-                // if (addedCount >= 5 || cachedDomainCount % 10 === 0) {
-                if (addedCount >= 3 || cachedDomainCount % 5 === 0) {
+                if (addedCount >= 5 || cachedDomainCount % 10 === 0) {
                     clearTimeout(updateBadgeTimer);
                     updateBadgeTimer = setTimeout(() => {
                         const count = cachedDomainCount;
