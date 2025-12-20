@@ -1,8 +1,8 @@
 const ext = typeof browser !== 'undefined' ? browser : chrome;
 const blacklist = [
-    "facebook.com", "messenger.com", "instagram.com",
+    "facebook.com", "messenger.com", "instagram.com", "threads.com",
     "twitter.com", "x.com", "linkedin.com", "tiktok.com",
-    "youtube.com", "gmail.com", "mail.google.com",
+    "youtube.com", "gmail.com", "mail.google.com", "calendar.google.com",
     "outlook.com", "live.com"
 ];
 
